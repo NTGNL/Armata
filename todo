@@ -1,0 +1,15 @@
+add tshark option to change interfaces
+add fetch IP address from an nmap
+add sqlmap options
+add wesside-ng options
+add wifite options
+add arp-scan options
+fix automater
+
+after getting a bluetooth interface add
+	Bluelog
+	bluemaho
+	spooftooph
+
+add interface selection option
+optimise GUI
