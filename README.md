@@ -1,7 +1,7 @@
 # Armata
 Security Exploitation and Forensics Toolkit
 
-[Description]
+Description
 --------------
 Script for automating exploitation/security analysis tasks faster. Allows the user to quickly execute commands by selecting options within the script menu. 
 
@@ -9,7 +9,7 @@ In order for this script to work properly you will need to edit the directory pa
 
 For later iterations i am planning for the script to install the required programs and dependencies itself and set the correct directory paths already for the user.
 
-######Disclaimer
+###### Disclaimer
 I am not responsible for any misuse of this script, if you set someones house on fire i had nothing to do with it, i just sold you the matches. 
 
 ## Dependancies
