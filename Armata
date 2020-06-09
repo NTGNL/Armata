@@ -190,7 +190,7 @@ show13(){
 		echo -n -e "${BWhi}Armata> ${RCol}"
 		read option
 		case $option in # enter your wordlist path here
-			1)sudo mdk3 $mIface b -f ~home/xelvi/Wordlists/Passwords/mil-dic.txt -b 54 -w a -m -c 11;;
+			1)sudo mdk3 $mIface b -f ~/Wordlists/Passwords/mil-dic.txt -b 54 -w a -m -c 11;;
 			2)sudo mdk3 $mIface b -f ~/Wordlists/Passwords/badwords.txt -b 54 -w a -m -c 11;;
 			3)sudo mdk3 $mIface b -f ~/Wordlists/Passwords/10_million_password_list_top_100000.txt -b 54 -w a -m -c 11;;
 			4)specifyes;;
