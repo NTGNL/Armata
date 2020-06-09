@@ -29,11 +29,11 @@ routersploit
 metasploit framework
 net-tools
 
-![desktop IMG1](https://github.com/NTGNL/Armata/blob/master/img0.png)
-![desktop IMG2](https://github.com/NTGNL/Armata/blob/master/img1.png)
-
 How to run:
 ```
 chmod +x Armata
 ./Armata
 ```
+
+![desktop IMG1](https://github.com/NTGNL/Armata/blob/master/img0.png)
+![desktop IMG2](https://github.com/NTGNL/Armata/blob/master/img1.png)
