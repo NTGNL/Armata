@@ -10,7 +10,7 @@ In order for this script to work properly you will need to edit the directory pa
 For later iterations i am planning for the script to install the required programs and dependencies itself and set the correct directory paths already for the user.
 
 ###### Disclaimer
-###### I am not responsible for any misuse of this script, if you set someones house on fire i had nothing to do with it, i just sold you the matches. 
+###### I am not responsible for any misuse of this script. DO NOT use this script for any illegal activities. This script should be used for educational purposes only. 
 
 ## Dependancies
 
